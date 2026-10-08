@@ -1,5 +1,9 @@
 # Benchmarking Strata (Qwen3.8-Flash-Next local engine)
 
+Canonical repo: https://github.com/Faks/strata-benchy (public; CLI command remains
+`llama-benchy`). Upstream PRs #34/#35 were closed without review — this fork is
+the maintained home of Strata support.
+
 Strata serves an OpenAI-compatible API with three behaviors stock benchy
 misreads. This fork adapts; upstream PRs #34 (merged or pending) and #35 carry
 the generic fixes. Use `--strata` and the rest is handled.
