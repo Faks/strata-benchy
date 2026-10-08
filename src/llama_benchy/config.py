@@ -44,6 +44,9 @@ class BenchmarkConfig(BaseModel):
         1,
         description="Number of discarded warmup runs per test shape; also used for generation latency probes",
     )
+    strata: bool = Field(
+        False, description="Strata preset: reasoning none + no-cache + artifact filtering"
+    )
     no_cache: bool = Field(
         ..., description="Ensure unique requests to avoid prefix caching"
     )
@@ -467,6 +470,7 @@ class BenchmarkConfig(BaseModel):
             num_runs=args.runs,
             warmup_runs=args.warmup_runs,
             no_cache=args.no_cache,
+            strata=args.strata,
             latency_mode=args.latency_mode,
             no_warmup=args.no_warmup,
             skip_coherence=args.skip_coherence,

@@ -34,6 +34,7 @@ class RequestResult:
     server_tg_tps: Optional[float] = None
     server_drafts_accepted: Optional[int] = None
     server_drafts_offered: Optional[int] = None
+    server_cache_n: Optional[int] = None
     token_timestamps: List[float] = field(default_factory=list)
 
 class LLMClient:
@@ -377,6 +378,11 @@ class LLMClient:
                                             result.server_drafts_accepted = int(tm['draft_n_accepted'])
                                         if tm.get('draft_n') is not None:
                                             result.server_drafts_offered = int(tm['draft_n'])
+                                        if tm.get('cache_n') is not None:
+                                            try:
+                                                result.server_cache_n = int(tm['cache_n'])
+                                            except (TypeError, ValueError):
+                                                pass
                                     except (TypeError, ValueError):
                                         pass
 

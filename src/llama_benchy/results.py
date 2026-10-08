@@ -45,6 +45,7 @@ class BenchmarkRun(BaseModel):
     srv_pp: Optional[BenchmarkMetric] = Field(None, description="Server-reported prefill tok/s (e.g. Strata timings)")
     srv_tg: Optional[BenchmarkMetric] = Field(None, description="Server-reported decode tok/s (e.g. Strata timings)")
     srv_drafts: Optional[str] = Field(None, description="Server-reported drafts accepted/offered (e.g. Strata MTP)")
+    cached_requests: int = Field(0, description="Requests excluded from prefill stats: server reused KV (cache_n>0)")
     
     # List of time series, one per run (aggregated across all requests in that run)
     throughput_over_time: Optional[List[TimeSeries]] = Field(
@@ -144,9 +145,10 @@ class BenchmarkResults:
             depth: int, 
             concurrency: int, 
             run_results: List[List[RequestResult]], # List of batches (one batch per run)
-            latency: float, 
+            latency: float,
             expected_pp_tokens: int,
             is_context_phase: bool = False,
+            strata_sanity: bool = False,
             save_total_throughput_timeseries: bool = False,
             save_all_throughput_timeseries: bool = False):
         
@@ -187,7 +189,8 @@ class BenchmarkResults:
                 save_total_throughput_timeseries=save_total_throughput_timeseries,
                 save_all_throughput_timeseries=save_all_throughput_timeseries,
                 agg_throughput_series=agg_throughput_series,
-                agg_req_throughput_series=agg_req_throughput_series
+                agg_req_throughput_series=agg_req_throughput_series,
+                strata_sanity=strata_sanity
             )
 
         # Calculate metrics for BenchmarkRun
@@ -206,8 +209,16 @@ class BenchmarkResults:
 
         # Server-reported timings (Strata `timings` object and friends): the only
         # prefill number immune to keep-alive/progress-chunk ttfr pollution.
-        srv_pp_vals = [r.server_pp_tps for b in run_results for r in b if r.server_pp_tps]
+        srv_pp_vals = [r.server_pp_tps for b in run_results for r in b
+                       if r.server_pp_tps and not (strata_sanity and r.server_pp_tps > 20000)]
         srv_tg_vals = [r.server_tg_tps for b in run_results for r in b if r.server_tg_tps]
+        cached_n = sum(1 for b in run_results for r in b if (r.server_cache_n or 0) > 0)
+        # Shared-window artifacts (Strata batch slots): server timings divide by
+        # ~0ms. Counted alongside cache hits; neither is a measurement.
+        if strata_sanity:
+            cached_n += sum(1 for b in run_results for r in b
+                            if not (r.server_cache_n or 0) > 0
+                            and r.server_pp_tps and r.server_pp_tps > 20000)
         srv_acc = sum(r.server_drafts_accepted for b in run_results for r in b if r.server_drafts_accepted)
         srv_off = sum(r.server_drafts_offered for b in run_results for r in b if r.server_drafts_offered)
         run_metric_srv_pp = self._calculate_metric(srv_pp_vals)
@@ -232,6 +243,7 @@ class BenchmarkResults:
             srv_pp=run_metric_srv_pp,
             srv_tg=run_metric_srv_tg,
             srv_drafts=run_srv_drafts,
+            cached_requests=cached_n,
             throughput_over_time=agg_throughput_series if save_total_throughput_timeseries else None,
             requests_throughput_over_time=agg_req_throughput_series if save_all_throughput_timeseries else None
         ))
@@ -253,7 +265,8 @@ class BenchmarkResults:
                        save_total_throughput_timeseries: bool = False,
                        save_all_throughput_timeseries: bool = False,
                        agg_throughput_series: Optional[List[TimeSeries]] = None,
-                       agg_req_throughput_series: Optional[List[List[TimeSeries]]] = None):
+                       agg_req_throughput_series: Optional[List[List[TimeSeries]]] = None,
+                       strata_sanity: bool = False):
         
         valid_results = [r for r in results if r and not r.error]
         if not valid_results:
@@ -329,8 +342,9 @@ class BenchmarkResults:
                 agg_ttft_values.append(ttft)
                 agg_est_ppt_values.append(est_ppt)
 
-            # Individual Speeds
-            if est_ppt > 0:
+            # Individual Speeds (cache-hit requests did not prefill: the
+            # server reused KV, so any per-second figure is an artifact)
+            if est_ppt > 0 and not (res.server_cache_n or 0) > 0:
                 pp_speed = prompt_tokens / est_ppt
                 agg_pp_speeds.append(pp_speed)
             
@@ -428,9 +442,10 @@ class BenchmarkResults:
                 
                 # Prompt Processing
                 if run.pp_throughput:
+                    cache_note = f" [{run.cached_requests} cached]" if run.cached_requests else ""
                     rows.append({
                         "model": self.model_name or "Unknown",
-                        "test_name": f"pp{run.prompt_size}{d_suffix}{c_suffix}",
+                        "test_name": f"pp{run.prompt_size}{d_suffix}{c_suffix}{cache_note}",
                         "t_s": run.pp_throughput,
                         "t_s_req": run.pp_req_throughput,
                         "peak_ts": None,
