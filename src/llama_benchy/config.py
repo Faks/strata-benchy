@@ -288,6 +288,13 @@ class BenchmarkConfig(BaseModel):
             help="Ensure unique requests to avoid prefix caching and send cache_prompt=false to the server",
         )
         parser.add_argument(
+            "--strata",
+            action="store_true",
+            help="Strata preset: reasoning_effort=none (thinking tokens would pollute "
+            "decode numbers) + --no-cache (Strata's prompt/conversation cache turns "
+            "repeats into cache-hit artifacts). Explicit --extra-body values win.",
+        )
+        parser.add_argument(
             "--post-run-cmd",
             type=str,
             default=None,
@@ -390,6 +397,10 @@ class BenchmarkConfig(BaseModel):
             args.exit_on_first_fail = True
         if args.warmup_runs < 0:
             parser.error("--warmup-runs must be >= 0")
+
+        if args.strata:
+            args.no_cache = True
+            args.extra_body = ["reasoning_effort=none"] + list(args.extra_body or [])
 
         try:
             extra_body = BenchmarkConfig._parse_extra_body(args.extra_body)
