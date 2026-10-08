@@ -48,10 +48,21 @@ async def main_async():
         progress = ProgressEmitter(config.emit_progress, llama_benchy_version=__version__)
     runner = BenchmarkRunner(config, client, prompt_gen, progress=progress)
 
-    # 5. Run Benchmark Suite
+    # 5. Run Benchmark Suite (or needle recall probes)
     status = "ok"
     try:
-        await runner.run_suite()
+        if config.needle_depths:
+            from .needle import run_needle_suite, print_needle_report
+            try:
+                corpus_text = corpus.tokenizer.decode(corpus.get_tokens())
+            except Exception:
+                corpus_text = "Lorem ipsum dolor sit amet. " * 200000
+            results = await run_needle_suite(config, client, corpus_text)
+            print_needle_report(results)
+            if any(not r.passed for r in results):
+                status = "error"
+        else:
+            await runner.run_suite()
     except KeyboardInterrupt:
         status = "interrupted"
         raise

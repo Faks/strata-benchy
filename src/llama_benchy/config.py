@@ -32,6 +32,13 @@ class BenchmarkConfig(BaseModel):
     depths: List[int] = Field(
         ..., description="List of context depths (previous conversation tokens)"
     )
+    needle_depths: List[int] = Field(
+        default_factory=list, description="Needle recall probe depths (empty: skip)"
+    )
+    needle_text: str = Field(
+        default="The vault code is 739284.",
+        description="Exact sentence buried and asked back in needle probes",
+    )
     num_runs: int = Field(..., description="Number of runs per test")
     warmup_runs: int = Field(
         1,
@@ -380,6 +387,22 @@ class BenchmarkConfig(BaseModel):
             help="Extra JSON fields to merge into benchmark chat completion requests. Accepts key=value or key:value, comma-separated or repeated.",
         )
         parser.add_argument(
+            "--needle",
+            type=int,
+            nargs="+",
+            default=[],
+            metavar="TOKENS",
+            help="Needle-in-haystack recall probes at the given context sizes "
+            "(e.g. --needle 32768 262144). Buries one exact sentence mid-prompt "
+            "and checks verbatim retrieval. Runs instead of the pp/tg matrix.",
+        )
+        parser.add_argument(
+            "--needle-text",
+            type=str,
+            default="The vault code is 739284.",
+            help="The exact sentence buried and asked back in --needle probes.",
+        )
+        parser.add_argument(
             "--emit-progress",
             type=str,
             default=None,
@@ -458,6 +481,8 @@ class BenchmarkConfig(BaseModel):
             save_all_throughput_timeseries=args.save_all_throughput_timeseries,
             exit_on_first_fail=args.exit_on_first_fail,
             no_results_on_fail=args.no_results_on_fail,
+            needle_depths=args.needle or [],
+            needle_text=args.needle_text,
             extra_body=extra_body,
             emit_progress=args.emit_progress,
         )

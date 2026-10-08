@@ -29,6 +29,7 @@ class RequestResult:
     prompt_tokens: int = 0
     total_tokens: int = 0
     error: Optional[str] = None
+    answer_text: str = field(default_factory=str)
     server_pp_tps: Optional[float] = None
     server_tg_tps: Optional[float] = None
     server_drafts_accepted: Optional[int] = None
@@ -119,6 +120,10 @@ class LLMClient:
             usage_completion_tokens: Optional[int],
             tokenizer=None
         ):
+        try:
+            result.answer_text = "".join(c.get("text") or "" for c in content_chunks)[-4000:]
+        except Exception:
+            pass
         if not content_chunks:
             if usage_completion_tokens is not None:
                 result.total_tokens = usage_completion_tokens
