@@ -5,8 +5,10 @@ Canonical repo: https://github.com/Faks/strata-benchy (public; CLI command remai
 the maintained home of Strata support.
 
 Strata serves an OpenAI-compatible API with three behaviors stock benchy
-misreads. This fork adapts; upstream PRs #34 (merged or pending) and #35 carry
-the generic fixes. Use `--strata` and the rest is handled.
+misreads. This fork adapts them; use `--strata` and the rest is handled.
+
+Contributions require honest disclosure of authorship (human / AI / mixed) —
+see README. LLM-authored PRs welcome; all PRs face the same gates.
 
 ## Quick start
 

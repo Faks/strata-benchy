@@ -1,3 +1,35 @@
+# strata-benchy — llama-benchy, hardened for Strata
+
+**This is the canonical home of Strata benchmarking.** Fork of
+[eugr/llama-benchy](https://github.com/eugr/llama-benchy) (credited, and still
+great for vLLM/SGLang/llama.cpp); everything Strata-specific — the `--strata`
+preset, server-timings columns, needle recall mode, cache-artifact filtering,
+keep-alive-proof prefill math — lives and ships **here**. Upstream closed our
+generic PRs without review; the tool moved on without them. The CLI command
+remains `llama-benchy`.
+
+Install:
+
+```bash
+pip install "git+https://github.com/Faks/strata-benchy.git@v0.4.0+strata.1"
+```
+
+Protocol and hard-won rules: [docs/strata.md](docs/strata.md).
+
+## Contributions
+
+**Honest disclosure is mandatory — for everyone.** State in the PR who wrote the
+code: human, AI agent, or both, and which parts. This repo's own work is
+AI-authored under measurement, and says so on every commit it can.
+
+**LLM-authored PRs are welcome** — disclosed, credited, and held to the same
+gates as everything else. **Human PRs get no benefit of the doubt either:**
+same A/Bs, same numbers, same verdict. Undisclosed authorship of any kind is the
+only automatic rejection here — a patch that hides its origin is a patch that
+fears its origin.
+
+---
+
 # llama-benchy - llama-bench style benchmarking tool for all backends
 
 This script benchmarks OpenAI-compatible LLM endpoints, generating statistics similar to `llama-bench`.
@@ -54,15 +86,15 @@ uvx llama-benchy --base-url <ENDPOINT_URL> --model <MODEL_NAME>
 Run the latest version from the main branch:
 
 ```bash
-uvx --from git+https://github.com/eugr/llama-benchy llama-benchy --base-url <ENDPOINT_URL> --model <MODEL_NAME>
+uvx --from git+https://github.com/Faks/strata-benchy llama-benchy --base-url <ENDPOINT_URL> --model <MODEL_NAME>
 ```
 
 ### Option 2: Install into virtual environment
 
 ```bash
 # Clone the repository
-git clone https://github.com/eugr/llama-benchy.git
-cd llama-benchy
+git clone https://github.com/Faks/strata-benchy.git
+cd strata-benchy
 
 # Create virtual environment
 uv venv
@@ -88,8 +120,8 @@ llama-benchy --base-url <ENDPOINT_URL> --model <MODEL_NAME>
 
 ```bash
 # Clone the repository
-git clone https://github.com/eugr/llama-benchy.git
-cd llama-benchy
+git clone https://github.com/Faks/strata-benchy.git
+cd strata-benchy
 
 # Using uv run (creates a virtual environment if it doesn't exist and runs the command)
 uv run llama-benchy --base-url <ENDPOINT_URL> --model <MODEL_NAME>
@@ -106,7 +138,7 @@ uv pip install -U llama-benchy
 Current version from the main branch:
 
 ```bash
-uv pip install git+https://github.com/eugr/llama-benchy --system
+uv pip install git+https://github.com/Faks/strata-benchy --system
 ```
 
 ## Usage
